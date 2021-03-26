@@ -8,15 +8,15 @@ import json
 token = '913737436:AAGmZ9TkmNaMjPATRRChaYI0XBk3hFIEWbU'  # bot constants
 bot = telebot.TeleBot(token)
 
-# users = {}  # constants for db
-# with open('users.txt', "r") as json_file:
-#     users = json.load(json_file)
-#     print(users.keys())
+users = {}  # constants for db
+with open('users.txt', "r") as json_file:
+    users = json.load(json_file)
+    print(users.keys())
 
 
-# def save_users(users):
-#     with open('users.txt', 'w') as outfile:
-#         json.dump(users, outfile)
+def save_users(users):
+    with open('users.txt', 'w') as outfile:
+        json.dump(users, outfile)
 
 
 def listener(messages):
