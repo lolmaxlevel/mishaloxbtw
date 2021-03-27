@@ -52,10 +52,10 @@ bot.set_update_listener(listener)
 def menu():
     markup = InlineKeyboardMarkup()
     markup.row_width = 2
-    events = InlineKeyboardButton("Мои мероприятия", callback_data="events")
-    organization = InlineKeyboardButton("Организация", callback_data="organization")
-    meme = InlineKeyboardButton("Мем", callback_data="meme")
-    rassilka = InlineKeyboardButton("Рассылка", callback_data="rassilka")
+    events = InlineKeyboardButton("Мои мероприятия 📃", callback_data="events")
+    organization = InlineKeyboardButton("Организация 🗿", callback_data="organization")
+    meme = InlineKeyboardButton("Мем 🛐", callback_data="meme")
+    rassilka = InlineKeyboardButton("Рассылка 📩", callback_data="rassilka")
     markup.add(events, organization, meme, rassilka)
     return markup
 
@@ -63,20 +63,36 @@ def menu():
 def organisator():
     markup = InlineKeyboardMarkup()
     markup.row_width = 1
-    add_event = InlineKeyboardButton('Добавить событие', callback_data='add_event')
-    edit_event = InlineKeyboardButton("Редактировать событие", callback_data='edit_event')
-    back_to_menu = InlineKeyboardButton('Назад', callback_data='back_to_menu')
+    add_event = InlineKeyboardButton('Добавить событие 📎', callback_data='add_event')
+    edit_event = InlineKeyboardButton("Редактировать событие ✂", callback_data='edit_event')
+    back_to_menu = InlineKeyboardButton('Назад ◀', callback_data='back_to_menu')
     markup.add(add_event, edit_event, back_to_menu)
     return markup
 
 
 def tags():
     markup = InlineKeyboardMarkup(row_width=1)
-    sport = InlineKeyboardButton('Спорт', callback_data='sport')
-    education = InlineKeyboardButton('Образование', callback_data='education')
-    roflxdlmao = InlineKeyboardButton('Меме)', callback_data = 'roflxdlmao')
-    public_govno = InlineKeyboardButton('Общественная деаятельность', callback_data='public_govno')
+    sport = InlineKeyboardButton('Спорт ⚽', callback_data='sport')
+    education = InlineKeyboardButton('Образование 📝', callback_data='education')
+    roflxdlmao = InlineKeyboardButton('Развлечения 🎬', callback_data = 'roflxdlmao')
+    public_govno = InlineKeyboardButton('Общественная деаятельность 🦽', callback_data='public_govno')
     markup.add(sport, education, roflxdlmao, public_govno)
+    return markup
+
+
+def yes():
+    markup = InlineKeyboardMarkup()
+    subs = InlineKeyboardButton('Подписаться ✅ ', callback_data='subs')
+    back_to_menu = InlineKeyboardButton('Назад ◀', callback_data='back_to_menu')
+    markup.add(subs, back_to_menu)
+    return markup
+
+
+def no():
+    markup = InlineKeyboardMarkup()
+    subs = InlineKeyboardButton('Отписаться ❌', callback_data='unsub')
+    back_to_menu = InlineKeyboardButton('Назад ◀ ', callback_data='back_to_menu')
+    markup.add(subs, back_to_menu)
     return markup
 
 
@@ -94,7 +110,7 @@ def add_events(message):
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.delete_message(message.chat.id, message.message_id)
-    bot.send_message(message.chat.id, "Привет! Пошел нахуй!\nВыбери действие:", reply_markup=menu())
+    bot.send_message(message.chat.id, "🐽Привет! Пошел нахуй!🐽\nВыбери действие:", reply_markup=menu())
     if str(message.chat.id) not in users:
         users[str(message.chat.id)] = [None, False]
         save_users(users)
@@ -127,6 +143,7 @@ def callback_query(call):
 
         elif call.data == 'back_to_menu':
             bot.edit_message_text('Пошел нахуй', call.message.chat.id, call.message.message_id, reply_markup=menu())
+
         if call.data == 'events':
             ans = ""
             with open('users.txt', "r") as json_file:
@@ -134,6 +151,21 @@ def callback_query(call):
                 for i in range(users[call.message.chat.id]):
                     ans += events[i]["name"] + "Время " + events[i]["time"] + "\n"
             bot.edit_message_text("a", call.message.chat.id, call.message_id, reply_markup=menu())
+
+        if call.data == 'rassilka':
+            if users[str(call.message.chat.id)][1]:
+                bot.edit_message_text('Ваша подписка активна! 🔔', call.message.chat.id, call.message.message_id, reply_markup=no())
+            else:
+                bot.edit_message_text('Ваша подписка не активна 🔕', call.message.chat.id, call.message.message_id, reply_markup=yes())
+
+        if call.data == 'subs':
+                bot.edit_message_text('Вы подписаны ✅', call.message.chat.id, call.message.message_id, reply_markup=menu())
+                users[str(call.message.chat.id)][1] = True
+        if call.data == 'unsub':
+                bot.edit_message_text('Вы не подписаны ❌', call.message.chat.id, call.message.message_id, reply_markup=menu())
+                users[str(call.message.chat.id)][1] = False
+
+
         bot.answer_callback_query(call.id)
     except Exception as e:
         print(e)
