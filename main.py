@@ -1,17 +1,33 @@
-# -*- coding: utf-8 -*-
 import datetime
 import time
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import json
+import requests
+import os
 
-token = '913737436:AAGmZ9TkmNaMjPATRRChaYI0XBk3hFIEWbU'  # bot constants
+url = 'https://tools.emailmatrix.ru/event-generator/'
+myobj = {
+"apikey" : "64ZFRFZAF57t3sdGsZK6102090589",
+"start" : "2021-09-28 00:00",
+"end" : "2021-09-28 01:00",
+"timezone" : "Europe/Moscow",
+"title" : "Событие",
+"url" : "http://emailmatrix.ru",
+"location" : "г. Рязань, 390010, ул. Октябрьская, д. 65, H264",
+"description" : "Описание события",
+"remind" : "2",
+"remind_unit" : "h"
+}
+x = (requests.post(url, json= myobj)).json()
+ics, google = x['ics'], x['google']
+
+token = '1701768134:AAE8pHbVTKLTM2PdKHRqRmLkgo8ticpV3gg'  # bot constants
 bot = telebot.TeleBot(token)
-
 users = {}  # constants for db
 with open('users.txt', "r") as json_file:
     users = json.load(json_file)
-    print(users.keys())
+    #print(users.keys())
 
 
 def save_users(users):
@@ -36,21 +52,35 @@ bot.set_update_listener(listener)
 def menu():
     markup = InlineKeyboardMarkup()
     markup.row_width = 2
-    settings = InlineKeyboardButton("Настройки", callback_data="settings")
-    statistic = InlineKeyboardButton("Статистика", callback_data="statistic")
-    statistic_by_location = InlineKeyboardButton("Статистика региона по вашей локации",
-                                                 callback_data="statistic_by_location")
-    news = InlineKeyboardButton("Сводка новостей", callback_data="news")
-    markup.add(settings, statistic, statistic_by_location, news)
+    events = InlineKeyboardButton("Мои мероприятия", callback_data="events")
+    organization = InlineKeyboardButton("Организация", callback_data="organization")
+    meme = InlineKeyboardButton("Мем", callback_data="meme")
+    rassilka = InlineKeyboardButton("Рассылка", callback_data="rassilka")
+    markup.add(events, organization, meme, rassilka)
     return markup
+
+
+def organisator():
+    markup = InlineKeyboardMarkup()
+    add_event = InlineKeyboardButton('Добавить событие', callback_data='add_event')
+    edit_event = InlineKeyboardButton("""Редактировать событие""", callback_data='edit_event')
+    markup.add(add_event, edit_event)
+    return markup
+
+def tags():
+    markup = InlineKeyboardMarkup()
+    sport = InlineKeyboardButton('Спорт')
+
+def add_events(message):
+    print(os.listdir(path="/users"))
+    print(message.chat.id)
+
 
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.delete_message(message.chat.id, message.message_id)
-    bot.send_message(message.chat.id, "Привет! Этот бот поможет тебе узнать актуальную информацию о коронавирусе в "
-                                      "твоем районе.\nВыбери действие:",
-                     reply_markup=menu())
+    bot.send_message(message.chat.id, "Привет! Пошел нахуй!\nВыбери действие:", reply_markup=menu())
     if str(message.chat.id) not in users:
         users[str(message.chat.id)] = [None, False]
         save_users(users)
@@ -70,11 +100,16 @@ def error(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     try:
-        if call.data == "settings":
-            bot.edit_message_text("Настройки:",
+        if call.data == "organization":
+            bot.edit_message_text(f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>\nВыберите действие: ",
                                   call.message.chat.id,
-                                  call.message.message_id, reply_markup=menu())
+                                  call.message.message_id, parse_mode='HTML', reply_markup=organisator())
 
+        if call.data == 'add_event':
+            a = bot.edit_message_text('Введите название события: ',
+                                  call.message.chat.id,
+                                  call.message.message_id)
+            bot.register_next_step_handler(a, add_events)
         bot.answer_callback_query(call.id)
 
     except Exception as e:
