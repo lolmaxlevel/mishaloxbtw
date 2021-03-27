@@ -29,11 +29,6 @@ with open('users.txt', "r") as json_file:
     users = json.load(json_file)
     #print(users.keys())
 
-def calendar(message):
-    calendar, step = DetailedTelegramCalendar(locale="ru").build()
-    bot.send_message(message.chat.id,
-                     f"Select {LSTEP[step]}",
-                     reply_markup=calendar)
 
 def save_users(users):
     with open('users.txt', 'w') as outfile:
@@ -70,7 +65,8 @@ def organisator():
     markup.row_width = 1
     add_event = InlineKeyboardButton('Добавить событие', callback_data='add_event')
     edit_event = InlineKeyboardButton("Редактировать событие", callback_data='edit_event')
-    markup.add(add_event, edit_event)
+    back_to_menu = InlineKeyboardButton('Назад', callback_data='back_to_menu')
+    markup.add(add_event, edit_event, back_to_menu)
     return markup
 
 
@@ -128,6 +124,9 @@ def callback_query(call):
                                   call.message.chat.id,
                                   call.message.message_id)
             bot.register_next_step_handler(a, add_events)
+
+        elif call.data == 'back_to_menu':
+            bot.edit_message_text('Пошел нахуй', call.message.chat.id, call.message.message_id, reply_markup=menu())
         bot.answer_callback_query(call.id)
     except Exception as e:
         print(e)
@@ -139,5 +138,5 @@ if __name__ == '__main__':
         try:
             bot.polling(none_stop=True)
         except Exception as e:
-            print(e)
+            print(f'i sleep   {e}')
             time.sleep(5)
