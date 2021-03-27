@@ -1,3 +1,17 @@
-https:\/\/tools.emailmatrix.ru\/event-generator\/?format=ics&id=42629
-
-https:\/\/calendar.google.com\/calendar\/event?action=TEMPLATE&tmeid=azRjZWlxN291ZTIwNHBobTY1bWo5YTY0MWMgZmFsb2RldnJqaHR1ZmJ0NmIyMHZncWpwcDBAZw&tmsrc=falodevrjhtufbt6b20vgqjpp0@group.calendar.google.com","start":"28.09.2021 00:00","title":"\u0421\u043e\u0431\u044b\u0442\u0438\u0435
+import requests
+url = 'https://tools.emailmatrix.ru/event-generator/'
+myobj = {
+"apikey" : "64ZFRFZAF57t3sdGsZK6102090589",
+"start" : "2021-09-28 00:00",
+"end" : "2021-09-28 01:00",
+"timezone" : "Europe/Moscow",
+"title" : "Событие",
+"url" : "http://emailmatrix.ru",
+"location" : "г. Рязань, 390010, ул. Октябрьская, д. 65, H264",
+"description" : "Описание события",
+"remind" : "2",
+"remind_unit" : "h"
+}
+x = (requests.post(url, json= myobj)).json()
+ics, google = x['ics'], x['google']
+f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>", parse_mode='HTML'
