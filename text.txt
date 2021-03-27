@@ -15,3 +15,6 @@ myobj = {
 x = (requests.post(url, json= myobj)).json()
 ics, google = x['ics'], x['google']
 f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>", parse_mode='HTML'
+
+
+https://prod.liveshare.vsengsaas.visualstudio.com/join?8E470CA77963AAB356585BC935F72BDC140A
