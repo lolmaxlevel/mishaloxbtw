@@ -150,7 +150,9 @@ def callback_query(call):
                 users = json.load(json_file)
                 for i in range(users[call.message.chat.id]):
                     ans += events[i]["name"] + "Время " + events[i]["time"] + "\n"
-            bot.edit_message_text("a", call.message.chat.id, call.message_id, reply_markup=menu())
+            bot.edit_message_text(ans, call.message.chat.id, call.message_id, reply_markup=menu())
+        if call.data == "edit_event":
+            bot.edit_message_text("Что редактировать будем епта?)", call.message.chat.id, call.message_id, reply_markup=event_edit())
 
         if call.data == 'rassilka':
             if users[str(call.message.chat.id)][1]:
