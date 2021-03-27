@@ -2,27 +2,7 @@ import datetime
 import time
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import json
-import requests
-import os
-
-url = 'https://tools.emailmatrix.ru/event-generator/'
-myobj = {
-    "apikey": "64ZFRFZAF57t3sdGsZK6102090589",
-    "start": "2021-09-28 00:00",
-    "end": "2021-09-28 01:00",
-    "timezone": "Europe/Moscow",
-    "title": "Событие",
-    "url": "http://emailmatrix.ru",
-    "location": "г. Рязань, 390010, ул. Октябрьская, д. 65, H264",
-    "description": "Описание события",
-    "remind": "2",
-    "remind_unit": "h"
-}
-import datetime
-import time
-import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram_bot_calendar import LSTEP, WYearTelegramCalendar
 import json
 import requests
 import os
@@ -52,7 +32,7 @@ url_keys = {"sport": "Спорт",
 x = (requests.post(url, json=myobj)).json()
 ics, google = x['ics'], x['google']
 
-token = '1701768134:AAE8pHbVTKLTM2PdKHRqRmLkgo8ticpV3gg'  # bot constants
+token = '913737436:AAGmZ9TkmNaMjPATRRChaYI0XBk3hFIEWbU'  # bot constants
 bot = telebot.TeleBot(token)
 users = {}  # constants for db
 with open('users.txt', "r") as json_file:
@@ -149,14 +129,20 @@ def add_events(message):
 
 
 def add_adress(message, text):
+    global m1
+    global t1
+    m1 = message
+    t1 = text
     with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
         f.write('{adress: "' + message.text + '", ')
     try:
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
         pass
-    a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
-    bot.register_next_step_handler(a, lambda m: add_date(m, text))
+    calendar, step = WYearTelegramCalendar(locale="ru").build()
+    bot.edit_message_text("Выберите дату", cmcd, cmmi,
+                     reply_markup=calendar)
+    # bot.register_next_step_handler(a, lambda m: add_date(m, text))
 
 
 def add_date(message, text):
@@ -221,10 +207,9 @@ def add_teg(message, text):
     except Exception as e:
         pass
     bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
-    for i in tegi:
-        for j in users:
-            if url_keys[i] in j[2]: #TODO доделать спам после нового ивента
-
+    # for i in tegi:
+    #     for j in users:
+    #         if url_keys[i] in j[2]: #TODO доделать спам после нового ивента
 
 
 @bot.message_handler(commands=['start'])
@@ -247,6 +232,21 @@ def error(message):
                                       'Если кнопки исчезли, введите команду /start')
 
 
+@bot.callback_query_handler(func=WYearTelegramCalendar.func())
+def cal(c):
+    result, key, step = WYearTelegramCalendar(locale="ru").process(c.data)
+    if not result and key:
+        bot.edit_message_text(f"Select {LSTEP[step]}",
+                              c.message.chat.id,
+                              c.message.message_id,
+                              reply_markup=key)
+    elif result:
+        with open(f'users\\{m1.chat.id}\\{t1}.txt', 'a') as f:
+            f.write('date: "' + str(result) + '", ')
+        a = bot.edit_message_text('Укажите время: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_time(m, t1))
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     try:
@@ -260,6 +260,7 @@ def callback_query(call):
             bot.edit_message_text(
                 f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>\nВыберите действие: ",
                 cmcd, cmmi, parse_mode='HTML', reply_markup=organisator())
+
         elif call.data == 'add_event':
             a = bot.edit_message_text('Введите название события: ',
                                       cmcd, cmmi)
