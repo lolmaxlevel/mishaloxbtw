@@ -31,7 +31,7 @@ with open('users.txt', "r") as json_file:
 
 
 def save_users(users):
-    with open('users.txt', 'w') as outfile:
+    with open('C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users.txt', 'w') as outfile:
         json.dump(users, outfile)
 
 
