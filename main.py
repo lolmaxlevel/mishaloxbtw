@@ -127,6 +127,13 @@ def callback_query(call):
 
         elif call.data == 'back_to_menu':
             bot.edit_message_text('Пошел нахуй', call.message.chat.id, call.message.message_id, reply_markup=menu())
+        if call.data == 'events':
+            ans = ""
+            with open('users.txt', "r") as json_file:
+                users = json.load(json_file)
+                for i in range(users[call.message.chat.id]):
+                    ans += events[i]["name"] + "Время " + events[i]["time"] + "\n"
+            bot.edit_message_text("a", call.message.chat.id, call.message_id, reply_markup=menu())
         bot.answer_callback_query(call.id)
     except Exception as e:
         print(e)
