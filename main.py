@@ -1,4 +1,5 @@
 import datetime
+from telegram_bot_calendar import DetailedTelegramCalendar, LSTEPc
 import time
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -48,7 +49,12 @@ def listener(messages):
 
 bot.set_update_listener(listener)
 
-
+def calendar(message):
+    calendar, step = DetailedTelegramCalendar(locale="ru").build()
+    bot.send_message(message.chat.id,
+                     f"Select {LSTEP[step]}",
+                     reply_markup=calendar)
+                    
 def menu():
     markup = InlineKeyboardMarkup()
     markup.row_width = 2
@@ -95,10 +101,11 @@ def error(message):
     print(type(message.chat.id))
     bot.send_message(message.chat.id, 'Воспользуйтесь предложенными кнопками. '
                                       'Если кнопки исчезли, введите команду /start')
-
+                    
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
+    result, key, step = DetailedTelegramCalendar(locale="ru").process(call.data)
     try:
         if call.data == "organization":
             bot.edit_message_text(f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>\nВыберите действие: ",
@@ -110,8 +117,16 @@ def callback_query(call):
                                   call.message.chat.id,
                                   call.message.message_id)
             bot.register_next_step_handler(a, add_events)
-        bot.answer_callback_query(call.id)
-
+        if not result and key:
+            bot.edit_message_text(f"Select {LSTEP[step]}",
+                                  call.message.chat.id,
+                                  call.message.message_id,
+                                  reply_markup=key)
+        elif result:
+            bot.edit_message_text(f"You selected {result}",
+                                  call.message.chat.id,
+                                  call.message.message_id)
+         bot.answer_callback_query(call.id)
     except Exception as e:
         print(e)
         pass
