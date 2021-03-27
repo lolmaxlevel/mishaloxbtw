@@ -97,14 +97,89 @@ def no():
 
 
 def add_events(message):
-    if str(message.chat.id) in os.listdir(path="users"):
-        with open(f'users/{message.chat.id}/{message.text}.txt', 'w') as f:
-            f.write('huy')
-        print('vse')
+    if str(message.chat.id) in os.listdir(path="C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users"):
+        with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{message.text}.txt', 'w') as f:
+            if message.text not in os.listdir(path=f"C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}"):
+                try:
+                    bot.delete_message(message.chat.id, message.message_id)
+                except Exception as e:
+                    pass
+                a = bot.edit_message_text('Укажите адрес: ', cmcd, cmmi)
+                bot.register_next_step_handler(a, lambda m: add_adress(m, message.text))
     else:
-        os.mkdir(f'users/{message.chat.id}')
-        with open(f'users/{message.chat.id}/{message.text}.txt', 'w') as f:
-            f.write('huy')
+        os.mkdir(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}')
+        with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{message.text}.txt', 'w') as f:
+            if message.text not in os.listdir(path=f"C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}"):
+                try:
+                    bot.delete_message(message.chat.id, message.message_id)
+                except Exception as e:
+                    pass
+                a = bot.edit_message_text('Укажите адрес: ', cmcd, cmmi)
+                bot.register_next_step_handler(a, lambda m: add_adress(m, message.text))
+
+def add_adress(message, text):
+    with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+        f.write('{adress: "' + message.text + '", ')
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        pass
+    a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
+    bot.register_next_step_handler(a, lambda m: add_date(m, text))
+
+def add_date(message, text):
+    with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+        f.write('date: "' + message.text + '", ')
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        pass
+    a = bot.edit_message_text('Укажите время: ', cmcd, cmmi)
+    bot.register_next_step_handler(a, lambda m: add_time(m, text))
+
+def add_time(message, text):
+    with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+        f.write('time: "' + message.text + '", ')
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        pass
+    a = bot.edit_message_text('Укажите длительность в часах: ', cmcd, cmmi)
+    bot.register_next_step_handler(a, lambda m: add_duration(m, text))
+
+def add_duration(message, text):
+    with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+        f.write('duration: "' + message.text + '", ')
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        pass
+    a = bot.edit_message_text('Укажите количество мест: ', cmcd, cmmi)
+    bot.register_next_step_handler(a, lambda m: add_place_left(m, text))
+
+def add_place_left(message, text):
+    with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+        f.write('place_left: "' + message.text + '", ')
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        pass
+    a = bot.edit_message_text('Выберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd, cmmi)
+    bot.register_next_step_handler(a, lambda m: add_teg(m, text))
+
+def add_teg(message, text):
+    tegs = ["Спорт", "Образование", "Развлечения", "Общественная деятельность"]
+    tegi = []
+    teg_ids = list(message.text)
+    for i in teg_ids:
+        tegi.append(tegs[int(i)-1])
+    with open(f'C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+        f.write('tags: "' + str(tegi) + '"}')
+    try:
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        pass
+    bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
 
 
 @bot.message_handler(commands=['start'])
@@ -130,15 +205,16 @@ def error(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     try:
+        global cmcd, cmmi
+    try:
+        cmcd = call.message.chat.id
+        cmmi = call.message.message_id
         if call.data == "organization":
             bot.edit_message_text(f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>\nВыберите действие: ",
-                                  call.message.chat.id,
-                                  call.message.message_id, parse_mode='HTML', reply_markup=organisator())
-
+                                  cmcd, cmmi, parse_mode='HTML', reply_markup=organisator())
         if call.data == 'add_event':
             a = bot.edit_message_text('Введите название события: ',
-                                  call.message.chat.id,
-                                  call.message.message_id)
+                                  cmcd, cmmi)
             bot.register_next_step_handler(a, add_events)
 
         elif call.data == 'back_to_menu':
