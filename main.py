@@ -19,14 +19,40 @@ myobj = {
     "remind": "2",
     "remind_unit": "h"
 }
+import datetime
+import time
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import json
+import requests
+import os
+
+url = 'https://tools.emailmatrix.ru/event-generator/'
+myobj = {
+    "apikey": "64ZFRFZAF57t3sdGsZK6102090589",
+    "start": "2021-09-28 00:00",
+    "end": "2021-09-28 01:00",
+    "timezone": "Europe/Moscow",
+    "title": "Событие",
+    "url": "http://emailmatrix.ru",
+    "location": "г. Рязань, 390010, ул. Октябрьская, д. 65, H264",
+    "description": "Описание события",
+    "remind": "2",
+    "remind_unit": "h"
+}
 url_keys = {"sport": "Спорт",
             "education": "Образование",
             "roflxdlmao": "Развлечение",
-            "public_govno": "Общественная деаятельность"}
+            "public_govno": "Общественная деаятельность",
+            "Спорт": "sport",
+            "Образование": "education",
+            "Развлечение": "roflxdlmao",
+            "Общественная деаятельность": "public_govno"}
+
 x = (requests.post(url, json=myobj)).json()
 ics, google = x['ics'], x['google']
 
-token = '1701768134:AAE8pHbVTKLTM2PdKHRqRmLkgo8ticpV3gg'  # bot constants
+token = '913737436:AAGmZ9TkmNaMjPATRRChaYI0XBk3hFIEWbU'  # bot constants
 bot = telebot.TeleBot(token)
 users = {}  # constants for db
 with open('users.txt', "r") as json_file:
@@ -80,22 +106,17 @@ def tags():
     education = InlineKeyboardButton('Образование 📝', callback_data='education')
     roflxdlmao = InlineKeyboardButton('Развлечения 🎬', callback_data='roflxdlmao')
     public_govno = InlineKeyboardButton('Общественная деаятельность 🦽', callback_data='public_govno')
-    markup.add(sport, education, roflxdlmao, public_govno)
+    back = InlineKeyboardButton('Назад ◀', callback_data='back_to_menu')
+    markup.add(sport, education, roflxdlmao, public_govno, back)
     return markup
 
 
-def yes():
+def no(n=False):
     markup = InlineKeyboardMarkup(row_width=1)
-    subs = InlineKeyboardButton('Подписаться ✅ ', callback_data='subs')
-    setup_tags = InlineKeyboardButton('Настроить тэги ✅ ', callback_data='setup_tags')
-    back_to_menu = InlineKeyboardButton('Назад ◀', callback_data='back_to_menu')
-    markup.add(subs, setup_tags, back_to_menu)
-    return markup
-
-
-def no():
-    markup = InlineKeyboardMarkup(row_width=1)
-    subs = InlineKeyboardButton('Отписаться ❌', callback_data='unsub')
+    if n:
+        subs = InlineKeyboardButton('Подписаться ✅ ', callback_data='subs')
+    else:
+        subs = InlineKeyboardButton('Отписаться ❌', callback_data='unsub')
     setup_tags = InlineKeyboardButton('Настроить тэги ✅ ', callback_data='setup_tags')
     back_to_menu = InlineKeyboardButton('Назад ◀ ', callback_data='back_to_menu')
     markup.add(subs, setup_tags, back_to_menu)
@@ -185,18 +206,25 @@ def add_place_left(message, text):
 
 
 def add_teg(message, text):
+    with open('users.txt', "r") as json_file:
+        users = json.load(json_file)
     tegs = ["Спорт", "Образование", "Развлечения", "Общественная деятельность"]
     tegi = []
     teg_ids = list(message.text)
     for i in teg_ids:
         tegi.append(tegs[int(i) - 1])
+
     with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-        f.write('tags: "' + str(tegi) + '"}')
+        f.write('tags: ' + str(tegi) + '}')
     try:
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
         pass
     bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
+    for i in tegi:
+        for j in users:
+            if url_keys[i] in j[2]: #TODO доделать спам после нового ивента
+
 
 
 @bot.message_handler(commands=['start'])
@@ -225,6 +253,7 @@ def callback_query(call):
         global cmcd, cmmi
         cmcd = call.message.chat.id
         cmmi = call.message.message_id
+        print(call.message.chat.id, call.data)
         with open(f"users.txt") as json_file:
             users = json.load(json_file)
         if call.data == "organization":
@@ -239,20 +268,20 @@ def callback_query(call):
         elif call.data == "settings":
             if users[str(call.message.chat.id)][2]:
                 bot.edit_message_text(
-                    'Ваша подписка активна! 🔔' + f"\nВаши тэги:{' '.join(users[str(call.message.chat.id)][1])}",
+                    'Ваша подписка активна! 🔔' + f"\nВаши тэги: {f', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
                     call.message.chat.id, call.message.message_id,
                     reply_markup=no())
             else:
                 bot.edit_message_text(
-                    'Ваша подписка не активна 🔕' + f"\nВаши тэги:{' '.join(users[str(call.message.chat.id)][1])}",
+                    'Ваша подписка не активна 🔕' + f"\nВаши тэги: {f', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
                     call.message.chat.id, call.message.message_id,
-                    reply_markup=yes())
+                    reply_markup=no(True))
         elif call.data == 'back_to_menu':
             bot.edit_message_text('Пошел нахуй', call.message.chat.id, call.message.message_id, reply_markup=menu())
 
         elif call.data == 'events':
             ans = ""
-            for i in range(users[call.message.chat.id]):
+            for i in range(users[str(call.message.chat.id)]):
                 ans += events[i]["name"] + "Время " + events[i]["time"] + "\n"
             bot.edit_message_text(ans, call.message.chat.id, call.message_id, reply_markup=menu())
         elif call.data == "edit_event":
