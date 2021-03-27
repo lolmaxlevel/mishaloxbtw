@@ -25,7 +25,7 @@ ics, google = x['ics'], x['google']
 token = '1701768134:AAE8pHbVTKLTM2PdKHRqRmLkgo8ticpV3gg'  # bot constants
 bot = telebot.TeleBot(token)
 users = {}  # constants for db
-with open('users.txt', "r") as json_file:
+with open('C:\\Users\\User\\Desktop\\mishaloxbtw-main\\users.txt', "r") as json_file:
     users = json.load(json_file)
     #print(users.keys())
 
