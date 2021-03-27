@@ -206,7 +206,6 @@ def error(message):
 def callback_query(call):
     try:
         global cmcd, cmmi
-    try:
         cmcd = call.message.chat.id
         cmmi = call.message.message_id
         if call.data == "organization":
