@@ -1,5 +1,4 @@
 import datetime
-from telegram_bot_calendar import DetailedTelegramCalendar, LSTEPc
 import time
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -30,6 +29,11 @@ with open('users.txt', "r") as json_file:
     users = json.load(json_file)
     #print(users.keys())
 
+def calendar(message):
+    calendar, step = DetailedTelegramCalendar(locale="ru").build()
+    bot.send_message(message.chat.id,
+                     f"Select {LSTEP[step]}",
+                     reply_markup=calendar)
 
 def save_users(users):
     with open('users.txt', 'w') as outfile:
@@ -49,12 +53,7 @@ def listener(messages):
 
 bot.set_update_listener(listener)
 
-def calendar(message):
-    calendar, step = DetailedTelegramCalendar(locale="ru").build()
-    bot.send_message(message.chat.id,
-                     f"Select {LSTEP[step]}",
-                     reply_markup=calendar)
-                    
+
 def menu():
     markup = InlineKeyboardMarkup()
     markup.row_width = 2
@@ -68,19 +67,32 @@ def menu():
 
 def organisator():
     markup = InlineKeyboardMarkup()
+    markup.row_width = 1
     add_event = InlineKeyboardButton('Добавить событие', callback_data='add_event')
-    edit_event = InlineKeyboardButton("""Редактировать событие""", callback_data='edit_event')
+    edit_event = InlineKeyboardButton("Редактировать событие", callback_data='edit_event')
     markup.add(add_event, edit_event)
     return markup
 
+
 def tags():
-    markup = InlineKeyboardMarkup()
-    sport = InlineKeyboardButton('Спорт')
+    markup = InlineKeyboardMarkup(row_width=1)
+    sport = InlineKeyboardButton('Спорт', callback_data='sport')
+    education = InlineKeyboardButton('Образование', callback_data='education')
+    roflxdlmao = InlineKeyboardButton('Меме)', callback_data = 'roflxdlmao')
+    public_govno = InlineKeyboardButton('Общественная деаятельность', callback_data='public_govno')
+    markup.add(sport, education, roflxdlmao, public_govno)
+    return markup
+
 
 def add_events(message):
-    print(os.listdir(path="/users"))
-    print(message.chat.id)
-
+    if str(message.chat.id) in os.listdir(path="users"):
+        with open(f'users/{message.chat.id}/{message.text}.txt', 'w') as f:
+            f.write('huy')
+        print('vse')
+    else:
+        os.mkdir(f'users/{message.chat.id}')
+        with open(f'users/{message.chat.id}/{message.text}.txt', 'w') as f:
+            f.write('huy')
 
 
 @bot.message_handler(commands=['start'])
@@ -101,11 +113,10 @@ def error(message):
     print(type(message.chat.id))
     bot.send_message(message.chat.id, 'Воспользуйтесь предложенными кнопками. '
                                       'Если кнопки исчезли, введите команду /start')
-                    
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    result, key, step = DetailedTelegramCalendar(locale="ru").process(call.data)
     try:
         if call.data == "organization":
             bot.edit_message_text(f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>\nВыберите действие: ",
@@ -117,16 +128,7 @@ def callback_query(call):
                                   call.message.chat.id,
                                   call.message.message_id)
             bot.register_next_step_handler(a, add_events)
-        if not result and key:
-            bot.edit_message_text(f"Select {LSTEP[step]}",
-                                  call.message.chat.id,
-                                  call.message.message_id,
-                                  reply_markup=key)
-        elif result:
-            bot.edit_message_text(f"You selected {result}",
-                                  call.message.chat.id,
-                                  call.message.message_id)
-         bot.answer_callback_query(call.id)
+        bot.answer_callback_query(call.id)
     except Exception as e:
         print(e)
         pass
@@ -136,6 +138,6 @@ if __name__ == '__main__':
     while True:
         try:
             bot.polling(none_stop=True)
-        except:
-            print('bolt')
+        except Exception as e:
+            print(e)
             time.sleep(5)
