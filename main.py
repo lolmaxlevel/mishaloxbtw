@@ -3,6 +3,7 @@ import time
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram_bot_calendar import LSTEP, WYearTelegramCalendar
+from geopy.geocoders import Nominatim
 import json
 import requests
 import os
