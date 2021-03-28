@@ -73,14 +73,13 @@ def menu():
     markup.add(events, organization, meme, settings)
     return markup
 
-
 def new_ivent(adress, text):
     location = geolocator.geocode(adress)
     markup = InlineKeyboardMarkup()
     markup.row_width = 1
-    sign = InlineKeyboardButton('Записаться на '+str(text), callback_data='sign')
+    sign = InlineKeyboardButton('Записаться на '+str(text), callback_data='_'+text)
     jopa = InlineKeyboardButton("Найти на карте", callback_data='find', url=f"https://yandex.ru/maps/?rtext=~{location.latitude}%2C{location.longitude}")
-    jopa1 = InlineKeyboardButton("Добавить в календарь ", callback_data='find',
+    jopa1 = InlineKeyboardButton("Добавить в календарь", callback_data='find',
                                 url=ics)
     find = InlineKeyboardButton("Добавить в календарь🟢",
                                 url=google)
@@ -381,7 +380,11 @@ def callback_query(call):
         if call.data == "organization":
             bot.edit_message_text("Выберите действие:",
                                   cmcd, cmmi, reply_markup=organisator())
-
+        elif call.data.startswith("_"):
+            print(1)
+            users[str(call.message.chat.id)][0].append(call.data[1:])
+            bot.edit_message_text("Вы успешно записались!!", cmcd, cmmi, reply_markup=menu())
+            save_users(users)
         elif call.data == 'add_event':
             a = bot.edit_message_text('Введите название события(название не может содержать символов: <> | \ /: " *): ',
                                       cmcd, cmmi)
