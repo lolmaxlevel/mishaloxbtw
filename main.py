@@ -390,7 +390,7 @@ def callback_query(call):
             users[str(call.message.chat.id)][2] = False
             save_users(users)
         elif call.data == "setup_tags":
-            bot.edit_message_text(f"в данный момент у вас включены такие тэги как"
+            bot.edit_message_text(f"В данный момент выбранны: "
                                   f" {', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
                                   call.message.chat.id,
                                   call.message.message_id,
@@ -398,16 +398,16 @@ def callback_query(call):
         elif str(call.data) not in users[str(call.message.chat.id)][1]:
             users[str(call.message.chat.id)][1].append(str(call.data))
             save_users(users)
-            bot.edit_message_text(f"{url_keys[str(call.data)]} добавлен, теперь уведомления приходят о "
-                                  f"{', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
+            bot.edit_message_text(f"Пункт «{url_keys[str(call.data)]}» добавлен, теперь уведомления приходят о ("
+                                  f"{', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])})",
                                   call.message.chat.id,
                                   call.message.message_id,
                                   reply_markup=tags())
         else:
             users[str(call.message.chat.id)][1].remove(str(call.data))
             save_users(users)
-            bot.edit_message_text(f"{url_keys[str(call.data)]} убран, уведомления больше не будут приходить, остались"
-                                  f" {', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
+            bot.edit_message_text(f" Пункт «{url_keys[str(call.data)]}» убран, уведомления больше не будут приходить, остались ("
+                                  f"{', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])})",
                                   call.message.chat.id,
                                   call.message.message_id,
                                   reply_markup=tags())
