@@ -34,7 +34,7 @@ url_keys = {"sport": "Спорт",
 x = (requests.post(url, json=myobj)).json()
 ics, google = x['ics'], x['google']
 
-token = '1701768134:AAE8pHbVTKLTM2PdKHRqRmLkgo8ticpV3gg'  # bot constants
+token = '913737436:AAGmZ9TkmNaMjPATRRChaYI0XBk3hFIEWbU'  # bot constants
 bot = telebot.TeleBot(token)
 users = {}  # constants for db
 with open('users.txt', "r") as json_file:
@@ -108,10 +108,10 @@ def no(n=False):
 def add_events(message):
     if str(message.chat.id) in os.listdir(path="users"):
         pathlist = os.listdir(
-                        path=f"users\\{message.chat.id}")
+            path=f"users\\{message.chat.id}")
         if f'{message.text}.txt'.lower() not in [i.lower() for i in pathlist]:
             with open(f'users\\{message.chat.id}\\{message.text}.txt',
-                    'w') as f:
+                      'w') as f:
                 print(f'{message.text}.txt'.lower(), [i.lower() for i in pathlist])
                 try:
                     bot.delete_message(message.chat.id, message.message_id)
@@ -245,7 +245,8 @@ def add_place_left(message, text):
         except Exception as e:
             pass
         a = bot.edit_message_text(
-            'Выберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
+            'Выберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134',
+            cmcd,
             cmmi)
         bot.register_next_step_handler(a, lambda m: add_teg(m, text))
     else:
@@ -274,17 +275,19 @@ def add_teg(message, text):
             except Exception as e:
                 pass
             bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
-            #for i in tegi:
-            #   for j in users:
-            #       if url_keys[i] in j[2]: #TODO доделать спам после нового ивента"""
+            for i in tegi:
+                for j in users:
+                    if url_keys[i] in j[2]:
+                        bot.send_message(int(j), "Появилось новое событие")
         except:
             try:
                 bot.delete_message(message.chat.id, message.message_id)
             except Exception as e:
                 pass
             a = bot.edit_message_text(
-            'Попробуйте снова!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
-            cmmi)
+                'Попробуйте снова!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134',
+                cmcd,
+                cmmi)
             bot.register_next_step_handler(a, lambda m: add_teg(m, text))
     else:
         try:
@@ -292,7 +295,8 @@ def add_teg(message, text):
         except Exception as e:
             pass
         a = bot.edit_message_text(
-            'Вы ввели не число!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
+            'Вы ввели не число!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134',
+            cmcd,
             cmmi)
         bot.register_next_step_handler(a, lambda m: add_teg(m, text))
 
@@ -344,7 +348,7 @@ def callback_query(call):
 
         if call.data == "organization":
             bot.edit_message_text("Выберите действие:",
-                cmcd, cmmi, reply_markup=organisator())
+                                  cmcd, cmmi, reply_markup=organisator())
 
         elif call.data == 'add_event':
             a = bot.edit_message_text('Введите название события(название не может содержать символов: <> | \ /: " *): ',
@@ -363,7 +367,8 @@ def callback_query(call):
                     call.message.chat.id, call.message.message_id,
                     reply_markup=no(True))
         elif call.data == 'back_to_menu':
-            bot.edit_message_text('Выберите действие:', call.message.chat.id, call.message.message_id, reply_markup=menu())
+            bot.edit_message_text('Выберите действие:', call.message.chat.id, call.message.message_id,
+                                  reply_markup=menu())
 
         elif call.data == 'events':
             ans = ""
