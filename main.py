@@ -142,47 +142,30 @@ def add_events(message):
 def proverka(message, text):
     global m1
     global t1
+    global l1
+    l1 = message.text
+    m1 = message
+    t1 = text
+    yesno = InlineKeyboardMarkup()
+    yesno.row_width = 2
+    yes = InlineKeyboardButton("Да", callback_data="yes")
+    no = InlineKeyboardButton("Нет", callback_data="no")
+    yesno.add(yes, no)
     try:
         location = geolocator.geocode(message.text)
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
             pass
-        a = bot.edit_message_text(f'Это верный адрес?(Да/Нет)\n\n{location.address}', cmcd, cmmi)
-        bot.register_next_step_handler(a, lambda m: add_adress(m, text, message.text))
-    except:
+        bot.edit_message_text(f'Это верный адрес?\n\n{location.address}', cmcd, cmmi, reply_markup=yesno)
+        
+    except Exception as e:
+        print(e)
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
             pass
         a = bot.edit_message_text('Этот адрес неверен!\nУкажите достоверный адрес: ', cmcd, cmmi)
-        bot.register_next_step_handler(a, lambda m: proverka(m, text))
-
-
-def add_adress(message, text, location):
-    global m1
-    global t1
-    m1 = message
-    t1 = text
-    if message.text == 'Да' or message.text == 'да':
-        with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-            f.write('{adress: "' + location + '", ')
-        try:
-            bot.delete_message(message.chat.id, message.message_id)
-        except Exception as e:
-            pass
-        a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
-        # bot.register_next_step_handler(a, lambda m: add_date(m, text))
-        calendar, step = WYearTelegramCalendar(locale="ru").build()
-        bot.edit_message_text("Выберите дату", cmcd, cmmi,
-                              reply_markup=calendar)
-    else:
-        try:
-            bot.delete_message(message.chat.id, message.message_id)
-        except Exception as e:
-            pass
-        a = bot.edit_message_text('Укажите достоверный адрес: ', cmcd, cmmi)
-
         bot.register_next_step_handler(a, lambda m: proverka(m, text))
 
 
@@ -345,8 +328,29 @@ def callback_query(call):
         print(call.message.chat.id, call.data)
         with open(f"users.txt") as json_file:
             users = json.load(json_file)
+                    
+        if call.data == 'yes':
+            with open(f'users\\{m1.chat.id}\\{t1}.txt', 'a') as f:
+                f.write('{adress: "' + l1 + '", ')
+            try:
+                bot.delete_message(m1.chat.id, m1.message_id)
+            except Exception as e:
+                pass
+            a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
+            # bot.register_next_step_handler(a, lambda m: add_date(m, text))
+            calendar = WYearTelegramCalendar(locale="ru").build()
+            bot.edit_message_text("Выберите дату", cmcd, cmmi,
+                                reply_markup=calendar)
 
-        if call.data == "organization":
+        elif call.data == 'no':
+            try:
+                bot.delete_message(m1.chat.id, m1.message_id)
+            except Exception as e:
+                pass
+            a = bot.edit_message_text('Укажите достоверный адрес: ', cmcd, cmmi)
+            bot.register_next_step_handler(a, lambda m: proverka(m, t1))
+
+        elif call.data == "organization":
             bot.edit_message_text("Выберите действие:",
                                   cmcd, cmmi, reply_markup=organisator())
 
