@@ -34,7 +34,7 @@ url_keys = {"sport": "Спорт",
 x = (requests.post(url, json=myobj)).json()
 ics, google = x['ics'], x['google']
 
-token = '913737436:AAGmZ9TkmNaMjPATRRChaYI0XBk3hFIEWbU'  # bot constants
+token = '1701768134:AAE8pHbVTKLTM2PdKHRqRmLkgo8ticpV3gg'  # bot constants
 bot = telebot.TeleBot(token)
 users = {}  # constants for db
 with open('users.txt', "r") as json_file:
