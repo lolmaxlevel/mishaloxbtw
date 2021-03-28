@@ -140,6 +140,8 @@ def add_events(message):
 
 
 def proverka(message, text):
+    global m1
+    global t1
     try:
         location = geolocator.geocode(message.text)
         try:
@@ -157,25 +159,11 @@ def proverka(message, text):
         bot.register_next_step_handler(a, lambda m: proverka(m, text))
 
 
-"""def add_adress(message, text):
+def add_adress(message, text, location):
     global m1
     global t1
     m1 = message
     t1 = text
-    with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-        f.write('{adress: "' + message.text + '", ')
-    try:
-        bot.delete_message(message.chat.id, message.message_id)
-    except Exception as e:
-        pass
-    calendar, step = WYearTelegramCalendar(locale="ru").build()
-    bot.edit_message_text("Выберите дату", cmcd, cmmi,
-                     reply_markup=calendar)
-    # bot.register_next_step_handler(a, lambda m: add_date(m, text))
-"""
-
-
-def add_adress(message, text, location):
     if message.text == 'Да' or message.text == 'да':
         with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
             f.write('{adress: "' + location + '", ')
@@ -184,13 +172,17 @@ def add_adress(message, text, location):
         except Exception as e:
             pass
         a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
-        bot.register_next_step_handler(a, lambda m: add_date(m, text))
+        # bot.register_next_step_handler(a, lambda m: add_date(m, text))
+        calendar, step = WYearTelegramCalendar(locale="ru").build()
+        bot.edit_message_text("Выберите дату", cmcd, cmmi,
+                              reply_markup=calendar)
     else:
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
             pass
         a = bot.edit_message_text('Укажите достоверный адрес: ', cmcd, cmmi)
+
         bot.register_next_step_handler(a, lambda m: proverka(m, text))
 
 
