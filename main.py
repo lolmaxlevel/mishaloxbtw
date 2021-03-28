@@ -7,6 +7,7 @@ import json
 import requests
 import os
 
+geolocator = Nominatim(user_agent="tg_bot")
 url = 'https://tools.emailmatrix.ru/event-generator/'
 myobj = {
     "apikey": "64ZFRFZAF57t3sdGsZK6102090589",
@@ -105,16 +106,25 @@ def no(n=False):
 
 def add_events(message):
     if str(message.chat.id) in os.listdir(path="users"):
-        with open(f'users\\{message.chat.id}\\{message.text}.txt',
-                  'w') as f:
-            if message.text not in os.listdir(
-                    path=f"users\\{message.chat.id}"):
+        pathlist = os.listdir(
+                        path=f"users\\{message.chat.id}")
+        if f'{message.text}.txt'.lower() not in [i.lower() for i in pathlist]:
+            with open(f'users\\{message.chat.id}\\{message.text}.txt',
+                    'w') as f:
+                print(f'{message.text}.txt'.lower(), [i.lower() for i in pathlist])
                 try:
                     bot.delete_message(message.chat.id, message.message_id)
+                    a = bot.edit_message_text('Укажите адрес: ', cmcd, cmmi)
+                    bot.register_next_step_handler(a, lambda m: proverka(m, message.text))
                 except Exception as e:
                     pass
-                a = bot.edit_message_text('Укажите адрес: ', cmcd, cmmi)
-                bot.register_next_step_handler(a, lambda m: add_adress(m, message.text))
+        else:
+            try:
+                bot.delete_message(message.chat.id, message.message_id)
+            except Exception as e:
+                pass
+            a = bot.edit_message_text('У вас уже есть ивент с таким названием!\nПридумайте другое: ', cmcd, cmmi)
+            bot.register_next_step_handler(a, add_events)
     else:
         os.mkdir(f'users\\{message.chat.id}')
         with open(f'users\\{message.chat.id}\\{message.text}.txt', 'w') as f:
@@ -125,10 +135,28 @@ def add_events(message):
                 except Exception as e:
                     pass
                 a = bot.edit_message_text('Укажите адрес: ', cmcd, cmmi)
-                bot.register_next_step_handler(a, lambda m: add_adress(m, message.text))
+                bot.register_next_step_handler(a, lambda m: proverka(m, message.text))
 
 
-def add_adress(message, text):
+def proverka(message, text):
+    try:
+        location = geolocator.geocode(message.text)
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text(f'Это верный адрес?(Да/Нет)\n\n{location.address}', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_adress(m, text, message.text))
+    except:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Этот адрес неверен!\nУкажите достоверный адрес: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: proverka(m, text))
+
+
+"""def add_adress(message, text):
     global m1
     global t1
     m1 = message
@@ -143,6 +171,26 @@ def add_adress(message, text):
     bot.edit_message_text("Выберите дату", cmcd, cmmi,
                      reply_markup=calendar)
     # bot.register_next_step_handler(a, lambda m: add_date(m, text))
+"""
+
+
+def add_adress(message, text, location):
+    if message.text == 'Да' or message.text == 'да':
+        with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
+            f.write('{adress: "' + location + '", ')
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_date(m, text))
+    else:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите достоверный адрес: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: proverka(m, text))
 
 
 def add_date(message, text):
@@ -152,70 +200,114 @@ def add_date(message, text):
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
         pass
-    a = bot.edit_message_text('Укажите время: ', cmcd, cmmi)
+    a = bot.edit_message_text('Укажите время(Пример: 14:40): ', cmcd, cmmi)
     bot.register_next_step_handler(a, lambda m: add_time(m, text))
 
 
 def add_time(message, text):
-    with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-        f.write('time: "' + message.text + '", ')
     try:
-        bot.delete_message(message.chat.id, message.message_id)
-    except Exception as e:
-        pass
-    a = bot.edit_message_text('Укажите длительность в часах: ', cmcd, cmmi)
-    bot.register_next_step_handler(a, lambda m: add_duration(m, text))
+        time.strptime(message.text, '%H:%M')
+        with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
+            f.write('time: "' + message.text + '", ')
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите длительность в часах: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_duration(m, text))
+    except ValueError:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите время в верном формате(Пример: 14:40): ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_time(m, text))
 
 
 def add_duration(message, text):
-    with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-        f.write('duration: "' + message.text + '", ')
-    try:
-        bot.delete_message(message.chat.id, message.message_id)
-    except Exception as e:
-        pass
-    a = bot.edit_message_text('Укажите количество мест: ', cmcd, cmmi)
-    bot.register_next_step_handler(a, lambda m: add_place_left(m, text))
+    if (message.text).isdigit():
+        with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
+            f.write('duration: "' + message.text + '", ')
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите количество мест: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_place_left(m, text))
+    else:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Вы ввели не число!\nУкажите длительность в часах: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_duration(m, text))
 
 
 def add_place_left(message, text):
-    with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-        f.write('place_left: "' + message.text + '", ')
-    try:
-        bot.delete_message(message.chat.id, message.message_id)
-    except Exception as e:
-        pass
-    a = bot.edit_message_text(
-        'Выберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
-        cmmi)
-    bot.register_next_step_handler(a, lambda m: add_teg(m, text))
+    if (message.text).isdigit():
+        with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
+            f.write('place_left: "' + message.text + '", ')
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text(
+            'Выберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
+            cmmi)
+        bot.register_next_step_handler(a, lambda m: add_teg(m, text))
+    else:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Вы ввели не число!\nУкажите количество мест: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_place_left(m, text))
 
 
 def add_teg(message, text):
-    with open('users.txt', "r") as json_file:
-        users = json.load(json_file)
-    tegs = ["Спорт", "Образование", "Развлечения", "Общественная деятельность"]
-    tegi = []
-    teg_ids = list(message.text)
-    for i in teg_ids:
-        tegi.append(tegs[int(i) - 1])
-
-    with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-        f.write('tags: ' + str(tegi) + '}')
-    try:
-        bot.delete_message(message.chat.id, message.message_id)
-    except Exception as e:
-        pass
-    bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
-    # for i in tegi:
-    #     for j in users:
-    #         if url_keys[i] in j[2]: #TODO доделать спам после нового ивента
+    if (message.text).isdigit():
+        with open('E:\\User data\\Desktop\\mishaloxbtw-main\\users.txt', "r") as json_file:
+            users = json.load(json_file)
+        tegs = ["Спорт", "Образование", "Развлечения", "Общественная деятельность"]
+        tegi = []
+        teg_ids = list(message.text)
+        try:
+            for i in teg_ids:
+                tegi.append(tegs[int(i) - 1])
+            with open(f'E:\\User data\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+                f.write('tags: ' + str(tegi) + '}')
+            try:
+                bot.delete_message(message.chat.id, message.message_id)
+            except Exception as e:
+                pass
+            bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
+            #for i in tegi:
+            #   for j in users:
+            #       if url_keys[i] in j[2]: #TODO доделать спам после нового ивента"""
+        except:
+            try:
+                bot.delete_message(message.chat.id, message.message_id)
+            except Exception as e:
+                pass
+            a = bot.edit_message_text(
+            'Попробуйте снова!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
+            cmmi)
+            bot.register_next_step_handler(a, lambda m: add_teg(m, text))
+    else:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text(
+            'Вы ввели не число!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134', cmcd,
+            cmmi)
+        bot.register_next_step_handler(a, lambda m: add_teg(m, text))
 
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.delete_message(message.chat.id, message.message_id)
-    bot.send_message(message.chat.id, "🐽Привет! Пошел нахуй!🐽\nВыбери действие:", reply_markup=menu())
+    bot.send_message(message.chat.id, "🐽Привет!\nВыбери действие:", reply_markup=menu())
     if str(message.chat.id) not in users:
         users[str(message.chat.id)] = [[], [], False]
         save_users(users)
@@ -256,13 +348,13 @@ def callback_query(call):
         print(call.message.chat.id, call.data)
         with open(f"users.txt") as json_file:
             users = json.load(json_file)
+
         if call.data == "organization":
-            bot.edit_message_text(
-                f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>\nВыберите действие: ",
-                cmcd, cmmi, parse_mode='HTML', reply_markup=organisator())
+            bot.edit_message_text("Выберите действие:",
+                cmcd, cmmi, reply_markup=organisator())
 
         elif call.data == 'add_event':
-            a = bot.edit_message_text('Введите название события: ',
+            a = bot.edit_message_text('Введите название события(название не может содержать символов: <> | \ /: " *): ',
                                       cmcd, cmmi)
             bot.register_next_step_handler(a, add_events)
 
@@ -278,7 +370,7 @@ def callback_query(call):
                     call.message.chat.id, call.message.message_id,
                     reply_markup=no(True))
         elif call.data == 'back_to_menu':
-            bot.edit_message_text('Пошел нахуй', call.message.chat.id, call.message.message_id, reply_markup=menu())
+            bot.edit_message_text('Выберите действие:', call.message.chat.id, call.message.message_id, reply_markup=menu())
 
         elif call.data == 'events':
             ans = ""
@@ -286,7 +378,7 @@ def callback_query(call):
                 ans += events[i]["name"] + "Время " + events[i]["time"] + "\n"
             bot.edit_message_text(ans, call.message.chat.id, call.message_id, reply_markup=menu())
         elif call.data == "edit_event":
-            bot.edit_message_text("Что редактировать будем епта?)", call.message.chat.id, call.message_id,
+            bot.edit_message_text("Выберите объект для редактирования:", call.message.chat.id, call.message_id,
                                   reply_markup=event_edit())
 
         elif call.data == 'subs':
