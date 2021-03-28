@@ -16,5 +16,12 @@ x = (requests.post(url, json= myobj)).json()
 ics, google = x['ics'], x['google']
 f"<a href='{ics}'>apple calendar</a>\n<a href='{google}'>google calendar</a>", parse_mode='HTML'
 
+from geopy.geocoders import Nominatim
+geolocator = Nominatim(user_agent="tg_bot")
+try:
+    location = geolocator.geocode("Притыцкого 6")
+    print(location.address)
+    print(f"https://yandex.ru/maps/?rtext=~{location.latitude}%2C{location.longitude}")
+except:
+    print('Нет такого адреса')
 
-https://prod.liveshare.vsengsaas.visualstudio.com/join?8E470CA77963AAB356585BC935F72BDC140A
