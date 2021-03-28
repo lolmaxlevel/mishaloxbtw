@@ -267,7 +267,7 @@ def add_place_left(message, text):
 
 def add_teg(message, text):
     if (message.text).isdigit():
-        with open('E:\\User data\\Desktop\\mishaloxbtw-main\\users.txt', "r") as json_file:
+        with open('users.txt', "r") as json_file:
             users = json.load(json_file)
         tegs = ["Спорт", "Образование", "Развлечения", "Общественная деятельность"]
         tegi = []
@@ -275,7 +275,7 @@ def add_teg(message, text):
         try:
             for i in teg_ids:
                 tegi.append(tegs[int(i) - 1])
-            with open(f'E:\\User data\\Desktop\\mishaloxbtw-main\\users\\{message.chat.id}\\{text}.txt', 'a') as f:
+            with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
                 f.write('tags: ' + str(tegi) + '}')
             try:
                 bot.delete_message(message.chat.id, message.message_id)
