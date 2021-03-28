@@ -7,6 +7,8 @@ from geopy.geocoders import Nominatim
 import json
 import requests
 import os
+import random
+from PIL import Image
 
 geolocator = Nominatim(user_agent="tg_bot")
 url = 'https://tools.emailmatrix.ru/event-generator/'
@@ -47,11 +49,6 @@ def save_users(users):
         json.dump(users, outfile)
 
 
-def save_users(users):
-    with open('users.txt', 'w') as outfile:
-        json.dump(users, outfile)
-
-
 def listener(messages):
     for m in messages:
         if m.content_type == 'text':
@@ -77,6 +74,20 @@ def menu():
     return markup
 
 
+def new_ivent(adress, text):
+    location = geolocator.geocode(adress)
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 1
+    sign = InlineKeyboardButton('Записаться на '+str(text), callback_data='sign')
+    jopa = InlineKeyboardButton("Найти на карте", callback_data='find', url=f"https://yandex.ru/maps/?rtext=~{location.latitude}%2C{location.longitude}")
+    jopa1 = InlineKeyboardButton("Добавить в календарь ", callback_data='find',
+                                url=ics)
+    find = InlineKeyboardButton("Добавить в календарь🟢",
+                                url=google)
+    markup.add(sign, jopa, jopa1, find)
+    return markup
+
+
 def organisator():
     markup = InlineKeyboardMarkup()
     markup.row_width = 1
@@ -96,6 +107,13 @@ def tags():
     back = InlineKeyboardButton('Назад ◀', callback_data='back_to_menu')
     markup.add(sport, education, roflxdlmao, public_govno, back)
     return markup
+
+def meme_back():
+    markup = InlineKeyboardMarkup()
+    back_to_menu_meme = InlineKeyboardButton('Назад', callback_data='back_to_menu_meme')
+    markup.add(back_to_menu_meme)
+    return markup
+
 
 
 def no(n=False):
@@ -167,11 +185,13 @@ def proverka(message, text):
 def add_adress(message, text, location):
     global m1
     global t1
+    global adr
     m1 = message
     t1 = text
     if message.text == 'Да' or message.text == 'да':
         with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
             f.write('{"adress": "' + location + '", ')
+            adr = location
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
@@ -274,7 +294,7 @@ def add_teg(message, text):
             for i in teg_ids:
                 tegi.append(tegs[int(i) - 1])
             with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-                a = ('"tags": ' + str(tegi) + '}').replace("'",'"')
+                a = ('"tags": ' + str(tegi) + '}').replace("'", '"')
                 f.write(a)
             try:
                 bot.delete_message(message.chat.id, message.message_id)
@@ -286,8 +306,9 @@ def add_teg(message, text):
                     if url_keys[i] in users[j][1]:
                         with open(f'users\\{message.chat.id}\\{text}.txt', "r") as json_file:
                             mp = json.load(json_file)
-                        bot.send_message(int(j), f"Появилось новое событие:{text}\n{mp['adress']}\n"
-                                                 f"{mp['date']}\n{mp['time']}\n{mp['duration']}\n{mp['place_left']}\n}")
+                        bot.send_message(int(j), f"Появилось новое событие: {text}\n по адресу: {mp['adress']}\n"
+                                                 f"{mp['date']}\nВ {mp['time']}\nПродолжительностью: {mp['duration']}\n"
+                                                 f"Мест осталось{mp['place_left']}\n", reply_markup=new_ivent(adr, text))
         except Exception as e:
             print(e)
             try:
@@ -365,6 +386,16 @@ def callback_query(call):
             a = bot.edit_message_text('Введите название события(название не может содержать символов: <> | \ /: " *): ',
                                       cmcd, cmmi)
             bot.register_next_step_handler(a, add_events)
+
+        elif call.data == 'meme':
+            rand_num = random.randint(1, 5)
+            rand_meme = Image.open(f'memes/{rand_num}.jpg')
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            bot.send_photo(call.message.chat.id, rand_meme, reply_markup=meme_back())
+
+        elif call.data == 'back_to_menu_meme':
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            bot.send_message(call.message.chat.id, 'Выберите пункт',reply_markup=menu())
 
         elif call.data == "settings":
             if users[str(call.message.chat.id)][2]:
