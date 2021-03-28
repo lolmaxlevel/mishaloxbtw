@@ -47,6 +47,11 @@ def save_users(users):
         json.dump(users, outfile)
 
 
+def save_users(users):
+    with open('users.txt', 'w') as outfile:
+        json.dump(users, outfile)
+
+
 def listener(messages):
     for m in messages:
         if m.content_type == 'text':
@@ -142,30 +147,47 @@ def add_events(message):
 def proverka(message, text):
     global m1
     global t1
-    global l1
-    l1 = message.text
-    m1 = message
-    t1 = text
-    yesno = InlineKeyboardMarkup()
-    yesno.row_width = 2
-    yes = InlineKeyboardButton("Да", callback_data="yes")
-    no = InlineKeyboardButton("Нет", callback_data="no")
-    yesno.add(yes, no)
     try:
         location = geolocator.geocode(message.text)
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
             pass
-        bot.edit_message_text(f'Это верный адрес?\n\n{location.address}', cmcd, cmmi, reply_markup=yesno)
-        
-    except Exception as e:
-        print(e)
+        a = bot.edit_message_text(f'Это верный адрес?(Да/Нет)\n\n{location.address}', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: add_adress(m, text, message.text))
+    except:
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
             pass
         a = bot.edit_message_text('Этот адрес неверен!\nУкажите достоверный адрес: ', cmcd, cmmi)
+        bot.register_next_step_handler(a, lambda m: proverka(m, text))
+
+
+def add_adress(message, text, location):
+    global m1
+    global t1
+    m1 = message
+    t1 = text
+    if message.text == 'Да' or message.text == 'да':
+        with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
+            f.write('{"adress": "' + location + '", ')
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
+        # bot.register_next_step_handler(a, lambda m: add_date(m, text))
+        calendar, step = WYearTelegramCalendar(locale="ru").build()
+        bot.edit_message_text("Выберите дату", cmcd, cmmi,
+                              reply_markup=calendar)
+    else:
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            pass
+        a = bot.edit_message_text('Укажите достоверный адрес: ', cmcd, cmmi)
+
         bot.register_next_step_handler(a, lambda m: proverka(m, text))
 
 
@@ -184,7 +206,7 @@ def add_time(message, text):
     try:
         time.strptime(message.text, '%H:%M')
         with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-            f.write('time: "' + message.text + '", ')
+            f.write('"time": "' + message.text + '", ')
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
@@ -203,7 +225,7 @@ def add_time(message, text):
 def add_duration(message, text):
     if (message.text).isdigit():
         with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-            f.write('duration: "' + message.text + '", ')
+            f.write('"duration": "' + message.text + '", ')
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
@@ -222,7 +244,7 @@ def add_duration(message, text):
 def add_place_left(message, text):
     if (message.text).isdigit():
         with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-            f.write('place_left: "' + message.text + '", ')
+            f.write('"place_left": "' + message.text + '", ')
         try:
             bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
@@ -252,23 +274,29 @@ def add_teg(message, text):
             for i in teg_ids:
                 tegi.append(tegs[int(i) - 1])
             with open(f'users\\{message.chat.id}\\{text}.txt', 'a') as f:
-                f.write('tags: ' + str(tegi) + '}')
+                a = ('"tags": ' + str(tegi) + '}').replace("'",'"')
+                f.write(a)
             try:
                 bot.delete_message(message.chat.id, message.message_id)
             except Exception as e:
-                pass
+                print(e)
             bot.edit_message_text('Ваше событие готово!\nВыберите действие:', cmcd, cmmi, reply_markup=menu())
             for i in tegi:
                 for j in users:
-                    if url_keys[i] in j[2]:
-                        bot.send_message(int(j), "Появилось новое событие")
-        except:
+                    if url_keys[i] in users[j][1]:
+                        with open(f'users\\{message.chat.id}\\{text}.txt', "r") as json_file:
+                            mp = json.load(json_file)
+                        bot.send_message(int(j), f"Появилось новое событие:{text}\n{mp['adress']}\n"
+                                                 f"{mp['date']}\n{mp['time']}\n{mp['duration']}\n{mp['place_left']}\n}")
+        except Exception as e:
+            print(e)
             try:
                 bot.delete_message(message.chat.id, message.message_id)
             except Exception as e:
-                pass
+                print(e)
             a = bot.edit_message_text(
-                'Попробуйте снова!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная деятельность\n\nПример: 134',
+                'Попробуйте снова!\nВыберите теги:\n1. Спорт\n2. Образование\n3. Развлечения\n4. Общественная '
+                'деятельность\n\nПример: 134',
                 cmcd,
                 cmmi)
             bot.register_next_step_handler(a, lambda m: add_teg(m, text))
@@ -314,7 +342,7 @@ def cal(c):
                               reply_markup=key)
     elif result:
         with open(f'users\\{m1.chat.id}\\{t1}.txt', 'a') as f:
-            f.write('date: "' + str(result) + '", ')
+            f.write('"date": "' + str(result) + '", ')
         a = bot.edit_message_text('Укажите время: ', cmcd, cmmi)
         bot.register_next_step_handler(a, lambda m: add_time(m, t1))
 
@@ -328,29 +356,8 @@ def callback_query(call):
         print(call.message.chat.id, call.data)
         with open(f"users.txt") as json_file:
             users = json.load(json_file)
-                    
-        if call.data == 'yes':
-            with open(f'users\\{m1.chat.id}\\{t1}.txt', 'a') as f:
-                f.write('{adress: "' + l1 + '", ')
-            try:
-                bot.delete_message(m1.chat.id, m1.message_id)
-            except Exception as e:
-                pass
-            a = bot.edit_message_text('Укажите дату: ', cmcd, cmmi)
-            # bot.register_next_step_handler(a, lambda m: add_date(m, text))
-            calendar = WYearTelegramCalendar(locale="ru").build()
-            bot.edit_message_text("Выберите дату", cmcd, cmmi,
-                                reply_markup=calendar)
 
-        elif call.data == 'no':
-            try:
-                bot.delete_message(m1.chat.id, m1.message_id)
-            except Exception as e:
-                pass
-            a = bot.edit_message_text('Укажите достоверный адрес: ', cmcd, cmmi)
-            bot.register_next_step_handler(a, lambda m: proverka(m, t1))
-
-        elif call.data == "organization":
+        if call.data == "organization":
             bot.edit_message_text("Выберите действие:",
                                   cmcd, cmmi, reply_markup=organisator())
 
@@ -394,7 +401,7 @@ def callback_query(call):
             users[str(call.message.chat.id)][2] = False
             save_users(users)
         elif call.data == "setup_tags":
-            bot.edit_message_text(f"В данный момент выбранны: "
+            bot.edit_message_text(f"в данный момент у вас включены такие тэги как"
                                   f" {', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
                                   call.message.chat.id,
                                   call.message.message_id,
@@ -402,16 +409,16 @@ def callback_query(call):
         elif str(call.data) not in users[str(call.message.chat.id)][1]:
             users[str(call.message.chat.id)][1].append(str(call.data))
             save_users(users)
-            bot.edit_message_text(f"Пункт «{url_keys[str(call.data)]}» добавлен, теперь уведомления приходят о ("
-                                  f"{', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])})",
+            bot.edit_message_text(f"{url_keys[str(call.data)]} добавлен, теперь уведомления приходят о "
+                                  f"{', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
                                   call.message.chat.id,
                                   call.message.message_id,
                                   reply_markup=tags())
         else:
             users[str(call.message.chat.id)][1].remove(str(call.data))
             save_users(users)
-            bot.edit_message_text(f" Пункт «{url_keys[str(call.data)]}» убран, уведомления больше не будут приходить, остались ("
-                                  f"{', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])})",
+            bot.edit_message_text(f"{url_keys[str(call.data)]} убран, уведомления больше не будут приходить, остались"
+                                  f" {', '.join([url_keys[i] for i in users[str(call.message.chat.id)][1]])}",
                                   call.message.chat.id,
                                   call.message.message_id,
                                   reply_markup=tags())
